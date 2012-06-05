@@ -1,0 +1,11 @@
+<project default="jar">
+	
+	<target name="jar">
+		
+		<jar destfile="com.yy.sysop.commons.scala.jar">
+			<fileset dir="bin"></fileset>
+		</jar>
+		
+	</target>
+	
+</project>

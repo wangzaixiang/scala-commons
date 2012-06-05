@@ -1,0 +1,9 @@
+package ${pkgName};
+
+public class ${className} extends ${superClassName} {
+
+<%fields.foreach { case field=> %>
+	${field.typ} ${field.name};
+<% } %>
+
+}
