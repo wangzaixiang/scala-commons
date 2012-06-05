@@ -1,0 +1,15 @@
+Scala-Commons aims to provide the commons library in my work
+
+wangzx.commons.template
+	A simple scala template engine
+
+wangzx.commons.sql
+	A powerful scala SQL API
+	
+wangzx.commons.json
+	simple JSON API
+	
+wangzx.commons.jsonrpc
+	simple JSON RPC
+	
+	
