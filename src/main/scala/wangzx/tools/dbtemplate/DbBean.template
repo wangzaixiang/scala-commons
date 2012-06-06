@@ -1,0 +1,23 @@
+package com.yy.sysop.assets2.entity
+
+import scala.reflect.BeanProperty
+import com.yy.sysop.commons.sql._
+
+/** 
+ * ${remarks}
+ *
+ * AUTOMATED GENERATED SOURCE, DON'T MODIFY THIS, IT WILL BE REGENERATED
+ */
+@Table(<% if(catelog != null) {%>catelog="${catelog}", <%}%>value="${tablename}")
+class ${entityName} extends java.io.Serializable {
+<% columns.foreach { col=> %>
+	/** ${col.remarks} */
+	<% col match {
+	case x if(x.isId && x.autoincrement) => print("@Id(auto=true) ")
+	case x if(x.isId) => print("@Id ")
+	case _ => 
+	} 
+	%>@BeanProperty var ${col.fieldName}: ${col.fieldType} = _
+<% } %>
+
+}

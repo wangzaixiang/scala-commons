@@ -8,10 +8,21 @@ import scala.tools.nsc.util.BatchSourceFile
 import scala.tools.nsc.util.Position
 import scala.tools.nsc.Global
 import scala.tools.nsc.Settings
+import java.io.InputStream
+import scala.io.Source
 
 object SimpleTemplateEngine {
 
-  // TODO generate the class on-the-fly
+  def template[M <: AnyRef](input: InputStream)(implicit mf: Manifest[M]): Template[M] = {
+    
+    val source = Source.fromInputStream(input)
+    val builder = new StringBuilder
+    source.foreach(builder.append(_))
+    val content = builder.toString
+    
+    template(content)
+  }
+  
   def template[M <: AnyRef](templateContent: String)(implicit mf: Manifest[M]): Template[M] = {
 
     val engine = new SimpleTemplateEngine(templateContent, mf.erasure)
@@ -32,7 +43,7 @@ object SimpleTemplateEngine {
 
   }
 
-  def compileAndLoad(source: String): Class[_] = {
+  private def compileAndLoad(source: String): Class[_] = {
 
     //println("source = \n" + source)
 
@@ -83,12 +94,6 @@ class SimpleTemplateEngine(templateContent: String, modelClass: Class[_]) {
   def print(string: String) = builder.append(string)
   def println(string: String) = builder.append(string).append('\n')
   def println() = builder.append('\n')
-
-  def readContent() = {
-    val builder = new StringBuilder
-    templateContent.foreach(builder.append(_))
-    builder.toString
-  }
 
   def generate(className: String): String = {
 
