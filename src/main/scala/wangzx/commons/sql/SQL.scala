@@ -23,6 +23,7 @@ import wangzx.commons.sql._
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import scala.ref.SoftReference
+import java.sql.PreparedStatement
 
 object SQL {
 
@@ -188,6 +189,59 @@ object SQL {
     value.asInstanceOf[T]
   } 
 
+  class Batcher(batchCount: Int, stmt: Statement) {
+    var count = 0
+
+    def addBatch(sqlStatement: String) {
+      stmt.addBatch(sqlStatement)
+      count += 1
+      if (count >= batchCount) {
+        commitBatch()
+      }
+    }
+
+    def addBatch() {
+      stmt.asInstanceOf[PreparedStatement].addBatch
+      count += 1
+      if (count >= batchCount) {
+        commitBatch()
+      }
+    }
+
+    def commitBatch() = {
+      try {
+        stmt.executeBatch
+      } finally {
+        count = 0
+      }
+    }
+
+  }
+
+}
+
+class RichConnection(conn: Connection) {
+
+  def executeUpdate(sql: String, args: Any*): Int = {
+    executeUpdateWithGenerateKey(sql, args: _*)(null)
+  }
+
+  def executeUpdateWithGenerateKey(sql: String, args: Any*)(processGenerateKeys: ResultSet => Unit = null): Int = {
+    val prepared = conn.prepareStatement(sql,
+      if (processGenerateKeys != null) Statement.RETURN_GENERATED_KEYS else Statement.NO_GENERATED_KEYS)
+    if (args != null) {
+      args.zipWithIndex.foreach { case (v, idx) => prepared.setObject(idx + 1, v) }
+    }
+    val result = prepared.executeUpdate()
+
+    if (processGenerateKeys != null) {
+      val keys = prepared.getGeneratedKeys
+      processGenerateKeys(keys)
+    }
+
+    result
+  }
+
 }
 
 class SQL {
@@ -287,7 +341,6 @@ class SQL {
   }
 
 
-  // TODO process key generate
   def insert(bean: AnyRef) {
 
     val mapping = SQL.getBeanMapping(bean.getClass)
@@ -339,6 +392,24 @@ class SQL {
       val args = fields.map(_.getter.invoke(bean)).toArray
       executeUpdate(sql, args: _*)
     }
+  }
+
+  def withTransaction[T](f: Connection => T): T = {
+    withConnection { conn =>
+
+      conn.setAutoCommit(false)
+      try {
+        val result = f(conn)
+        conn.commit
+        result
+      } catch {
+        case ex @ _ =>
+          conn.rollback
+          throw ex
+      }
+
+    }
+
   }
 
   // TODO
